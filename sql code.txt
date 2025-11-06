@@ -1,0 +1,179 @@
+CREATE SCHEMA startup_incubator_management_system;
+USE startup_incubator_management_system;
+
+-- ------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Table for Startups
+-- Stores core information about each startup.
+CREATE TABLE startups (
+    startup_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    domain VARCHAR(255),
+    stage VARCHAR(100),
+    registration_date DATE
+);
+
+-- Table for Founders
+-- Each founder is linked to one startup via a foreign key.
+CREATE TABLE founders (
+    founder_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    contact VARCHAR(50),
+    startup_id INT,
+    FOREIGN KEY (startup_id) REFERENCES startups(startup_id) ON DELETE CASCADE
+);
+
+-- Table for Mentors
+-- Stores information about available mentors.
+CREATE TABLE mentors (
+    mentor_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    expertise_area VARCHAR(255)
+);
+
+-- Table for Investors
+-- Stores information about potential investors or firms.
+CREATE TABLE investors (
+    investor_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    investment_domain VARCHAR(255)
+);
+
+-- Table for Funding Records
+-- Tracks funding events, linking a startup and an investor.
+CREATE TABLE funding (
+    funding_id INT AUTO_INCREMENT PRIMARY KEY,
+    startup_id INT,
+    investor_id INT,
+    amount DECIMAL(15, 2) NOT NULL,
+    date DATE,
+    FOREIGN KEY (startup_id) REFERENCES startups(startup_id) ON DELETE CASCADE,
+    FOREIGN KEY (investor_id) REFERENCES investors(investor_id) ON DELETE SET NULL
+);
+
+-- Junction Table for Startups and Mentors
+-- Implements the Many-to-Many relationship shown in the ER diagram.
+-- A startup can have many mentors, and a mentor can guide many startups.
+CREATE TABLE startup_mentors (
+    startup_id INT,
+    mentor_id INT,
+    PRIMARY KEY (startup_id, mentor_id),
+    FOREIGN KEY (startup_id) REFERENCES startups(startup_id) ON DELETE CASCADE,
+    FOREIGN KEY (mentor_id) REFERENCES mentors(mentor_id) ON DELETE CASCADE
+);
+-- ------------------------------------------------------------------------------------------------------------------------------------------------
+
+ -- Insert data into tables
+-- ---------------------------------------------------
+
+-- Insert 5 rows into the 'startups' table
+INSERT INTO startups (name, domain, stage, registration_date) VALUES
+('Fintech Solutions', 'FinTech', 'Growth', '2022-01-15'),
+('HealthAI Diagnostics', 'HealthTech', 'Early Stage', '2023-05-20'),
+('EcoSustain Packaging', 'GreenTech', 'Seed', '2024-02-10'),
+('LearnSphere Online', 'EdTech', 'Growth', '2021-11-01'),
+('QuantumLeap Analytics', 'Deep Tech', 'Idea', '2024-08-01');
+
+-- Insert 5 rows into the 'mentors' table
+INSERT INTO mentors (name, expertise_area) VALUES
+('Rajesh Kumar', 'Product Management'),
+('Priya Sharma', 'Marketing & SEO'),
+('Anand Desai', 'AI & Machine Learning'),
+('Sunita Patil', 'Financial Modeling'),
+('Vikram Singh', 'Sales Strategy');
+
+-- Insert 5 rows into the 'investors' table
+INSERT INTO investors (name, investment_domain) VALUES
+('Sequoia Capital', 'SaaS, FinTech'),
+('Anjali Mehta', 'Angel Investor - HealthTech'),
+('Accel Partners', 'B2B Software'),
+('Kalaari Capital', 'Consumer Tech'),
+('Blume Ventures', 'Deep Tech, AI');
+
+-- Insert 5 rows into the 'founders' table, linking each to a startup
+INSERT INTO founders (name, email, contact, startup_id) VALUES
+('Arjun Mehta', 'arjun.mehta@example.com', '9876543210', 1), -- Founder for Fintech Solutions
+('Sneha Reddy', 'sneha.reddy@example.com', '9876543211', 2), -- Founder for HealthAI Diagnostics
+('Rohan Gupta', 'rohan.gupta@example.com', '9876543212', 3), -- Founder for EcoSustain Packaging
+('Meera Krishnan', 'meera.k@example.com', '9876543213', 4), -- Founder for LearnSphere Online
+('Aditya Verma', 'aditya.verma@example.com', '9876543214', 5); -- Founder for QuantumLeap Analytics
+
+-- Insert 5 rows into the 'funding' table, creating funding events
+INSERT INTO funding (startup_id, investor_id, amount, date) VALUES
+(1, 1, 5000000.00, '2023-03-10'), -- Fintech Solutions funded by Sequoia Capital
+(2, 2, 750000.00, '2023-09-05'),  -- HealthAI Diagnostics funded by Anjali Mehta
+(4, 3, 2000000.00, '2022-06-15'), -- LearnSphere Online funded by Accel Partners
+(3, 4, 250000.00, '2024-04-01'),  -- EcoSustain Packaging funded by Kalaari Capital
+(1, 3, 10000000.00, '2024-07-20'); -- Fintech Solutions (second round) funded by Accel Partners
+
+-- Insert 5 rows into the 'startup_mentors' junction table to assign mentors
+INSERT INTO startup_mentors (startup_id, mentor_id) VALUES
+(1, 1), -- Fintech Solutions is mentored by Rajesh Kumar (Product Management)
+(1, 4), -- Fintech Solutions is also mentored by Sunita Patil (Financial Modeling)
+(2, 3), -- HealthAI Diagnostics is mentored by Anand Desai (AI & ML)
+(4, 2), -- LearnSphere Online is mentored by Priya Sharma (Marketing)
+(5, 3); -- QuantumLeap Analytics is mentored by Anand Desai (AI & ML)
+-- --------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Select operations
+select * from startups;
+select * from mentors;
+select * from investors;
+select * from founders;
+select * from funding;
+select * from startup_mentors;
+-- --------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Update Operations
+
+-- 1. Update the 'stage' of a startup.
+-- Let's say HealthAI Diagnostics (ID 2) has moved from 'Early Stage' to 'Growth'.
+UPDATE startups
+SET stage = 'Growth'
+WHERE startup_id = 2;
+
+-- 2. Update a founder's contact information.
+-- Let's say Arjun Mehta (ID 1) has a new contact number.
+UPDATE founders
+SET contact = '9900000001'
+WHERE founder_id = 1;
+
+-- 3. Update a mentor's expertise area.
+-- Let's say Priya Sharma (ID 2) has expanded her expertise.
+UPDATE mentors
+SET expertise_area = 'Marketing & SEO Strategy'
+WHERE mentor_id = 2;
+
+-- 4. Update a funding amount (e.g., correcting a typo).
+-- Let's correct the funding for EcoSustain Packaging (Funding ID 4).
+UPDATE funding
+SET amount = 300000.00
+WHERE funding_id = 4;
+-- ---------------------------------------------------------------------------------------------------------------------------------------------------
+
+-- Delete Operations
+
+-- To demonstrate the DELETE functionality without removing the 
+-- original 5 data entries, we will first ADD a temporary row, 
+-- verify its existence, and then DELETE it.
+
+-- Step 1: CREATE a temporary record
+-- We insert a new 'dummy' startup into the 'startups' table.
+INSERT INTO startups (name, domain, stage, registration_date)
+VALUES ('DeleteMe Inc.', 'Temporary', 'Idea', '2025-01-01');
+
+-- Step 2: READ the temporary record
+-- This optional SELECT query verifies that the 'DeleteMe Inc.' startup
+-- was successfully inserted before we attempt to delete it.
+SELECT * FROM startups 
+WHERE name = 'DeleteMe Inc.';
+
+-- Step 3: DELETE the temporary record
+-- This is the core DELETE operation. We target the specific record
+-- we just created by using its unique name in the WHERE clause.
+DELETE FROM startups
+WHERE name = 'DeleteMe Inc.';
+
+
+
